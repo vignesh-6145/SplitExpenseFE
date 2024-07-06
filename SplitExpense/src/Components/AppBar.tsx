@@ -2,11 +2,35 @@ import { AppBar, Avatar, Box, Button, Container, IconButton, Menu, MenuItem, Too
 import { useState } from "react";
 import AdbIcon from '@mui/icons-material/Adb';
 import MenuIcon from '@mui/icons-material/Menu';
+import { signOutUser, signinUser } from "../Redux/Auth/AuthActions";
+import { connect, useSelector, useDispatch } from "react-redux";
+import { Email } from "@mui/icons-material";
+import { removeCurrentUser } from "../Redux/CrrUser/CrrUserActions";
+import MenuOptionItem from "../Contracts/MenuIOptionItem";
+import { Link } from "react-router-dom";
 
-const pages:string[] = ["Home","About","Premium"];
-const settings:string[] = ["Profile","Account","Dashboard","Logout"];
+
+
+// const mapStateToProps = state => {
+//     return {
+//         isSignedIn : state.isSignedIn
+//     }
+// }
+// const mapDispatchtoProps = dispatch => {
+//     return{
+//         signIn : (email:string,password:string)=> dispatch(signinUser(email,password)),
+//         signOut : (email:string) => dispatch(signOutUser(email))
+//     }
+// }
+
+const pages:MenuOptionItem[] = [{label:"Home",action:null,isLoginRequired:false},{label:"About",action:null,isLoginRequired:false},{label:"Premium",action:null,isLoginRequired:false},{label:"dashboard",action:null,isLoginRequired:true}];
+const settings = [{label:"Profile",action:null},{label:"Account",action:null},{label:"Dashboard",action:null},{label:"Logout",action:null}];
+
 
 function Appbar(){
+    const isSignedIn = useSelector(state => state.auth.isSignedIn)
+    const dispatch = useDispatch()
+
     const [anchorElNav,setAnchorElNav] = useState<null|HTMLElement>(null);
     const [anchorElUser,setAnchorElUser] = useState<null|HTMLElement>(null);
 
@@ -14,7 +38,11 @@ function Appbar(){
     const handleOpenUserMenu = (event:React.MouseEvent<HTMLElement>) => setAnchorElUser(event.currentTarget);
 
     const handleCloseNavMenu = () => setAnchorElNav(null);
-    const handleCloseUserMenu = () => setAnchorElUser(null);
+    const handleCloseUserMenu = () => {
+        setAnchorElUser(null);//need to update it to users email
+        dispatch(signOutUser());
+        dispatch(removeCurrentUser());
+    };
 
     return (
         <AppBar position="static">
@@ -82,12 +110,12 @@ function Appbar(){
                             {
                                 pages.map(page => (
                                     <MenuItem 
-                                        key={page}
+                                        key={page.label}
                                         onClick={handleCloseNavMenu}
                                         >
                                             <Typography
                                                 textAlign="center"
-                                            >{page}</Typography>
+                                            >{page.label}</Typography>
                                         </MenuItem>
                                 ))
                             }
@@ -125,18 +153,19 @@ function Appbar(){
                             }
                         }}
                     >
-                        {pages.map((page)=>(
+                        {pages.filter((page)=> !page.isLoginRequired || page.isLoginRequired==isSignedIn).map((page)=>(
                             <Button
-                                key={page}
+                                key={page.label}
                                 onClick={handleCloseNavMenu}
                                 sx={{
                                     my:2,
                                     color:'white',
                                     display:'block'
                                 }}
-                            >{page}</Button>
+                            ><Link to={page.label} style={{ color: 'inherit', textDecoration: 'inherit'}}>{page.label}</Link></Button>
                         ))}
                     </Box>
+                    {isSignedIn && 
                     <Box sx={{flexGrow:0}}>
                         <Tooltip title="open Settings">
                             <IconButton
@@ -164,13 +193,15 @@ function Appbar(){
                         >
                         {settings.map(setting => (
                             <MenuItem 
-                                key={setting}
+                                key={setting.label}
                                 onClick={handleCloseUserMenu}
                             >
-                                <Typography textAlign="center">{setting}</Typography></MenuItem>
+                                <Typography textAlign="center">{setting.label}</Typography>
+                            </MenuItem>
                         ))}    
                         </Menu>
-                    </Box>
+                    </Box>}
+                    {!isSignedIn && <Link to="signin" style={{ color: 'inherit', textDecoration: 'inherit'}}>Signin/Signup</Link>}
                 </Toolbar>
                 
             </Container>
@@ -178,4 +209,5 @@ function Appbar(){
     )
 }
 
-export default Appbar;
+// export default connect(mapStateToProps,mapDispatchtoProps)(Appbar);
+export default Appbar
