@@ -1,15 +1,25 @@
-import { Box } from "@mui/material";
+import { Box, Checkbox, TableCell, TableHead, TableRow, Typography } from "@mui/material";
+import { User } from "../Contracts/Models/User";
+import { Expense, dummyExpense } from "../Contracts/Models/Expense";
+import DashboardTable from "../Components/DashboardTable";
+
+/*
+    Need to implement 
+        1. descendingComparator
+        2. getComparator
+        3. stableSort
+
+*/
+
 
 function DashboardPage(){
     return (
-        <Box
-            sx={{
-                display:'flex',
-                alignItems:'center',
-                marginTop:8
-            }}
+        <Box   
+            padding={3}
         >
-            Dashboard
+            <Typography variant="h6">Recent Expenses</Typography>
+            <DashboardTable></DashboardTable>
+
         </Box>
     )
 }

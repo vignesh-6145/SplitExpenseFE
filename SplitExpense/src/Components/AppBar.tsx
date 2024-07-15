@@ -110,6 +110,8 @@ function Appbar(){
                             {
                                 pages.map(page => (
                                     <MenuItem 
+                                        component={Link} 
+                                        to={`/${page.label}`}
                                         key={page.label}
                                         onClick={handleCloseNavMenu}
                                         >
