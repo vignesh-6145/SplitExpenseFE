@@ -7,7 +7,7 @@ interface NoticeProps{
 function Notice(props:NoticeProps){
    return (<Box
         sx={{
-            marginTop:20,
+            margin:'auto',
             display:'flex',
             flexDirection:'column',
             alignItems:'center'

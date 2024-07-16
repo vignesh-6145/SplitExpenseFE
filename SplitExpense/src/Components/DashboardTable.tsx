@@ -101,7 +101,6 @@ export default function DashboardTable(){
         <Box>
             <TableContainer 
             sx={{
-                width:'90%',
                 margin:'auto'
             }}
             >
