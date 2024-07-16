@@ -1,8 +1,18 @@
-import { Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography, styled, tableCellClasses } from "@mui/material";
+import { Box, Paper, Table, TableBody, TableCell, TableContainer, TableFooter, TableHead, TablePagination, TableRow, Typography, styled, tableCellClasses } from "@mui/material";
 import { Expense, dummyExpense } from "../Contracts/Models/Expense";
 import { useSelector } from "react-redux";
 import { useEffect, useState } from "react";
 import { getExpensesApi } from "../network/Expenses/expenseapi";
+import TablePaginationActions from "@mui/material/TablePagination/TablePaginationActions";
+
+interface HeadCell<T>{
+    //diablePadding:boolean,
+    id:keyof T,
+    label:string,
+    numeric:boolean
+}
+
+
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
     [`&.${tableCellClasses.head}`]: {
@@ -23,12 +33,8 @@ const StyledTableCell = styled(TableCell)(({ theme }) => ({
       border: 0,
     },
   }));
-  interface HeadCell<T>{
-    //diablePadding:boolean,
-    id:keyof T,
-    label:string,
-    numeric:boolean
-}
+
+
   const expenseHeadCells: HeadCell<Expense>[] =[
     {
         id:'name',
@@ -56,13 +62,15 @@ export default function DashboardTable(){
     const [data,setData] = useState<Expense[]>([]);
     const token = useSelector( state => state.auth.token);
     const userId = useSelector(state => state.crrUser.user.userId);
+    const [page,setPage] = useState<number>(0);
+    const [rowsPerPage,setRowsPerPage] = useState<number>(5);
     
     useEffect(
        () => {
         getExpensesApi(userId,token)
        .then( resp => {
-            const data = resp.data;
-            const expenses: Expense[] = data.map((expense) => ({
+            const respData = resp.data;
+            const expenses: Expense[] = respData.map((expense) => ({
                 id: expense.expenseId,
                 name: expense.name,
                 doc: expense.doc, // Assuming doc is a string in YYYY-MM-DD format
@@ -75,8 +83,20 @@ export default function DashboardTable(){
        .catch(err => console.log(err))
     }
     ,[]);
-    console.log("-------------------------"+data);
 
+    const handleChangePage = (
+        event:React.MouseEvent<HTMLButtonElement> | null,
+        newPage:number,
+    ) =>{
+        setPage(newPage);
+    }
+
+    const handleChangeRowsPerPage = (
+        event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    ) => {
+        setRowsPerPage(parseInt(event.target.value,10));
+        setPage(0);
+    }
     return(
         <Box>
             <TableContainer 
@@ -93,18 +113,28 @@ export default function DashboardTable(){
                     <TableRow>
                         {
                             expenseHeadCells.map((headCell) => (
-                                <StyledTableCell key={headCell.label} align='center'>{headCell.label}</StyledTableCell>
+                                <StyledTableCell key={headCell.label} align='center'>
+                                    <Typography variant="button">{headCell.label}</Typography>
+                                </StyledTableCell>
                             ))
                         }
                     </TableRow>
                 </TableHead>
                 <TableBody>
-                        {data.length!=0 && data.map((row)=>(
+                        {data.length!=0 && data.slice(page*rowsPerPage,page*rowsPerPage+rowsPerPage).map((row)=>(
                             <StyledTableRow key={row.name}>
-                                <StyledTableCell align="left">{row.name}</StyledTableCell>
-                                <StyledTableCell align="left">{row.amount}</StyledTableCell>
-                                <StyledTableCell align="left">{row.doc}</StyledTableCell>
-                                <StyledTableCell align="left">{row.settled?"Paid":"Pending"}</StyledTableCell>
+                                <StyledTableCell align="center">
+                                    <Typography variant="body1">{row.name}</Typography>
+                                </StyledTableCell>
+                                <StyledTableCell align="center">                                
+                                    <Typography variant="body1">{row.amount}</Typography>
+                                </StyledTableCell>
+                                <StyledTableCell align="center">                                
+                                    <Typography variant="body1">{row.doc}</Typography>
+                                </StyledTableCell>
+                                <StyledTableCell align="center">                                
+                                    <Typography variant="body1">{row.settled?"Paid":"Pending"}</Typography>
+                                </StyledTableCell>
                             </StyledTableRow>  
                         ))}
                         
@@ -115,9 +145,33 @@ export default function DashboardTable(){
                             </StyledTableRow>
                         )}
                 </TableBody>
+                <TableFooter>
+                <TableRow>
+                    <TablePagination
+                        rowsPerPageOptions={[1,5,10,25,{label:'All',value:-1}]}
+                        colSpan={4}
+                        count={data.length}
+                        rowsPerPage={rowsPerPage}
+                        page={page}
+                        slotProps={{
+                            select:{
+                                native:true
+                            }
+                        }}
+                        onPageChange={handleChangePage}
+                        onRowsPerPageChange={handleChangeRowsPerPage}
+                        ActionsComponent={TablePaginationActions}
+                    >
+
+                    </TablePagination>
+                </TableRow>
+            </TableFooter>
             </Table>
+            
         </TableContainer>
         </Box>
         
     )
 }
+
+//Add a new page to record a expense

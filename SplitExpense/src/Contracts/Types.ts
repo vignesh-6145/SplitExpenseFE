@@ -28,3 +28,13 @@ export interface apkState{
 export function dateOnly(dt:Date):DateOnly{
     return `${dt.getFullYear()}-${dt.getMonth()}-${dt.getDay()}` as DateOnly;
 }
+
+export interface TablePaginationProps{
+    count: number,
+    page: number,
+    rowsPerPage: number,
+    onPageChange:(
+        event: React.MouseEvent<HTMLButtonElement>,
+        newPage: number
+    ) => void;
+}
