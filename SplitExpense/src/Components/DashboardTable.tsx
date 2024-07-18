@@ -1,9 +1,13 @@
-import { Box, Paper, Table, TableBody, TableCell, TableContainer, TableFooter, TableHead, TablePagination, TableRow, Typography, styled, tableCellClasses } from "@mui/material";
+import { Alert, Box, Button, IconButton, Paper, Table, TableBody, TableCell, TableContainer, TableFooter, TableHead, TablePagination, TableRow, Typography, styled, tableCellClasses } from "@mui/material";
 import { Expense, dummyExpense } from "../Contracts/Models/Expense";
 import { useSelector } from "react-redux";
 import { useEffect, useState } from "react";
-import { getExpensesApi } from "../network/Expenses/expenseapi";
+import { deleteExpensesApi, getExpensesApi } from "../network/Expenses/expenseapi";
 import TablePaginationActions from "@mui/material/TablePagination/TablePaginationActions";
+import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import { GUID } from "../Contracts/Types";
+import { useNavigate } from "react-router-dom";
 
 interface HeadCell<T>{
     //diablePadding:boolean,
@@ -56,6 +60,11 @@ const StyledTableCell = styled(TableCell)(({ theme }) => ({
         numeric:false,
         label:'settled'
     },
+    {
+        id:'settled',
+        numeric:false,
+        label:'Actions'
+    },
 ]
 
 export default function DashboardTable(){
@@ -65,13 +74,16 @@ export default function DashboardTable(){
     const [page,setPage] = useState<number>(0);
     const [rowsPerPage,setRowsPerPage] = useState<number>(5);
     
+    const [deleteSignal,setDeleteSignal] = useState<number>(0);//1 -delete success 2 - delete fail 3-something went wrong 0 - no attempt
+    const navigate = useNavigate();
+
     useEffect(
        () => {
         getExpensesApi(userId,token)
        .then( resp => {
             const respData = resp.data;
             const expenses: Expense[] = respData.map((expense) => ({
-                id: expense.expenseId,
+                expenseId: expense.expenseId,
                 name: expense.name,
                 doc: expense.doc, // Assuming doc is a string in YYYY-MM-DD format
                 amount: expense.amount,
@@ -97,6 +109,18 @@ export default function DashboardTable(){
         setRowsPerPage(parseInt(event.target.value,10));
         setPage(0);
     }
+    const deleteExpense = (expenseId:GUID) =>{
+        deleteExpensesApi(expenseId,token)
+        .then(response => {
+            if(response.status==200){
+                setDeleteSignal(1);
+            }else{
+                setDeleteSignal(3);
+            }
+        })
+        .catch(err => setDeleteSignal(2))
+        navigate('/dashboard');
+    }
     return(
         <Box>
             <TableContainer 
@@ -104,6 +128,19 @@ export default function DashboardTable(){
                 margin:'auto'
             }}
             >
+            {deleteSignal==1 && (
+                <Alert severity="success" onClose={() => {setDeleteSignal(0)}} >
+                    Successfully deleted your expense.
+                </Alert>)}
+                
+            {deleteSignal==2 && (
+                <Alert severity="error" onClose={() => {setDeleteSignal(0)}} >
+                    Failed deleted your expense.
+                </Alert>)}
+            {deleteSignal==3 && (
+            <Alert severity="error" onClose={() => {setDeleteSignal(0)}} >
+                Something went wrong while deleting your expense
+            </Alert>)}
             <Table sx={{
                 minWidth:'50%',
                 borderRadius:'90%'
@@ -134,13 +171,21 @@ export default function DashboardTable(){
                                 <StyledTableCell align="center">                                
                                     <Typography variant="body1">{row.settled?"Paid":"Pending"}</Typography>
                                 </StyledTableCell>
+                                <StyledTableCell align="center">                                
+                                    <IconButton>
+                                        <EditOutlinedIcon/>
+                                    </IconButton>
+                                    <IconButton onClick={()=> deleteExpense(row.expenseId)}>
+                                        <DeleteForeverOutlinedIcon/>
+                                    </IconButton>
+                                </StyledTableCell>
                             </StyledTableRow>  
                         ))}
                         
                         {data.length == 0 && (
                             <StyledTableRow>
                                 
-                                <StyledTableCell colSpan={4} align="center"><Typography variant="subtitle2">There are now expesnes found</Typography></StyledTableCell>
+                                <StyledTableCell colSpan={5} align="center"><Typography variant="subtitle2">There are now expesnes found</Typography></StyledTableCell>
                             </StyledTableRow>
                         )}
                 </TableBody>
@@ -148,7 +193,7 @@ export default function DashboardTable(){
                 <TableRow>
                     <TablePagination
                         rowsPerPageOptions={[1,5,10,25,{label:'All',value:-1}]}
-                        colSpan={4}
+                        colSpan={expenseHeadCells.length}
                         count={data.length}
                         rowsPerPage={rowsPerPage}
                         page={page}
